@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Icosahedron, MeshDistortMaterial } from '@react-three/drei';
-
+ 
 interface FormData {
   name: string;
   email: string;
@@ -17,6 +15,7 @@ interface FormData {
 const Contact: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
 
@@ -52,35 +51,56 @@ const Contact: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Form submitted:', data);
-      setSubmitStatus('success');
-      reset();
+      const accessKey = (process.env.REACT_APP_WEB3FORMS_KEY || '').trim();
+      if (!accessKey) {
+        throw new Error('Missing Web3Forms access key');
+      }
+
+      const payload = {
+        access_key: accessKey,
+        subject: 'New Project Inquiry from Portfolio Contact Form',
+        from_name: data.name,
+        from_email: data.email,
+        reply_to: data.email,
+        botcheck: '',
+        name: data.name,
+        email: data.email,
+        company: data.company || 'N/A',
+        phone: data.phone || 'N/A',
+        projectType: data.projectType,
+        budget: data.budget || 'N/A',
+        timeline: data.timeline || 'N/A',
+        message: data.message
+      };
+
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSubmitStatus('success');
+        setErrorMessage(null);
+        reset();
+      } else {
+        throw new Error(result.message || 'Submission failed');
+      }
     } catch (error) {
       setSubmitStatus('error');
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const AnimatedIcosahedron = () => (
-    <Canvas>
-      <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} autoRotate autoRotateSpeed={1.8} />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <Icosahedron args={[1]} scale={1.2}>
-        <MeshDistortMaterial
-          color="#3b82f6"
-          attach="material"
-          distort={0.3}
-          speed={1.5}
-          roughness={0}
-        />
-      </Icosahedron>
-    </Canvas>
-  );
+ 
 
   return (
     <section id="contact" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-primary-50">
@@ -96,11 +116,11 @@ const Contact: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
           {/* Contact Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Start Your Project</h3>
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-5 lg:p-6 pb-2 sm:pb-3 lg:pb-4">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Start Your Project</h3>
             
             {submitStatus === 'success' && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                 <div className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
                   <span className="font-semibold">Thank you! We'll get back to you within 24 hours.</span>
@@ -109,16 +129,18 @@ const Contact: React.FC = () => {
             )}
 
             {submitStatus === 'error' && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                <div className="flex items-center">
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <div className="flex items-start">
                   <span className="text-red-500 mr-2">✗</span>
-                  <span className="font-semibold">Something went wrong. Please try again.</span>
+                  <span className="font-semibold">
+                    {errorMessage || 'Something went wrong. Please try again.'}
+                  </span>
                 </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Full Name *
@@ -155,7 +177,7 @@ const Contact: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Company Name
@@ -180,7 +202,7 @@ const Contact: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Project Type *
@@ -247,7 +269,7 @@ const Contact: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-semibold py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 lg:px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-xs sm:text-sm lg:text-base"
+                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-semibold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-xs sm:text-sm lg:text-base"
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
@@ -312,13 +334,6 @@ const Contact: React.FC = () => {
                     <p className="text-xs sm:text-sm text-gray-500">Mon-Fri 9AM-6PM PST</p>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* 3D Animation */}
-            <div className="bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl p-4 sm:p-6 lg:p-8 h-48 sm:h-56 lg:h-64 flex items-center justify-center">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32">
-                <AnimatedIcosahedron />
               </div>
             </div>
 

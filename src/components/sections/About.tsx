@@ -1,6 +1,5 @@
 import React from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Box, MeshDistortMaterial } from '@react-three/drei';
+ 
 
 const About: React.FC = () => {
   const teamMembers = [
@@ -72,22 +71,7 @@ const About: React.FC = () => {
     { number: '99%', label: 'Client Satisfaction', icon: '⭐' }
   ];
 
-  const AnimatedCube = () => (
-    <Canvas>
-      <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} autoRotate autoRotateSpeed={1} />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <Box args={[1, 1, 1]} scale={1.5}>
-        <MeshDistortMaterial
-          color="#3b82f6"
-          attach="material"
-          distort={0.2}
-          speed={1}
-          roughness={0}
-        />
-      </Box>
-    </Canvas>
-  );
+ 
 
   return (
     <section id="about" className="py-12 sm:py-16 px-3 sm:px-4 lg:px-8 bg-white">
@@ -104,7 +88,7 @@ const About: React.FC = () => {
         </div>
 
         {/* Company Story Grid */}
-        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center mb-12 sm:mb-16 lg:mb-20">
+        <div className="grid gap-8 sm:gap-12 lg:gap-16 items-center mb-12 sm:mb-16 lg:mb-20">
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Our Journey</h3>
             <div className="space-y-3 sm:space-y-4 text-sm sm:text-base text-gray-600 leading-relaxed">
@@ -131,13 +115,6 @@ const About: React.FC = () => {
               </div>
               <div className="bg-primary-100 text-primary-700 px-4 py-2 rounded-full font-semibold">
                 🎨 Design Excellence
-              </div>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl p-8 h-96 flex items-center justify-center">
-              <div className="w-48 h-48">
-                <AnimatedCube />
               </div>
             </div>
           </div>
